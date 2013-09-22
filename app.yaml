@@ -1,0 +1,44 @@
+# This is the configuration file.
+# It may not be very common to deal with it
+# for purposes other than the application's
+# name, version, etc.
+
+### Application data
+
+# ID for Google
+application: foo
+
+# Versions and options
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+### External tools
+libraries:
+
+# webapp2 is required
+- name: webapp2
+  version: latest
+
+# jinja2 is required
+- name: jinja2
+  version: latest
+
+### Avoid specifying any more files
+### in the configuration
+handlers:
+
+# Stylesheets, images, and javascripts
+- url: /assets
+  static_dir: assets
+
+# Favicon
+- url: /favicon\.ico
+  static_files: assets/img/favicon.ico
+  upload: favicon\.ico
+
+# Application script (note: actual extension is .py)
+- url: .*
+  script: main.app
+
