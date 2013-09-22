@@ -1,9 +1,16 @@
 *.py[cod]
 
+# OS X
+.DS_Store
+Icon
+Icon?
+
 # C extensions
 *.so
 
 # Packages
+MANIFEST
+MANIFEST.*
 *.egg
 *.egg-info
 dist
