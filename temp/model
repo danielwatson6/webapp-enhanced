@@ -1,0 +1,4 @@
+from lib import db
+
+class {name}Model(db.Model):
+	pass

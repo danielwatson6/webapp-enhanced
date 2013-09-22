@@ -1,0 +1,8 @@
+from {lname} import {name} as {name}Controller
+from controllers.core import UploadController
+
+class {name}(UploadController):
+	r'/{lname}s/upload'
+	
+	# Associated Controller
+	default_class = {name}Controller

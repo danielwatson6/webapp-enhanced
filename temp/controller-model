@@ -1,0 +1,8 @@
+from controllers.core import ModelController
+from models.{lname} import {name}Model
+
+class {name}(ModelController):
+	r'/{lname}'
+	
+	# Associated Model
+	model = {name}Model

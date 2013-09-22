@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% for resource in resources %}
+{{ resource }}
+{% endfor %}
+
+{% endblock %}

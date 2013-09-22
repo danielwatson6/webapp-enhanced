@@ -1,0 +1,4 @@
+from controllers.core import CustomController
+
+class {name}(CustomController):
+	r'/{lname}'
