@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+
+import os
+import re
+import argparse
+import settings
+import subprocess
+
+### Methods
+def new(name):
+	# TODO: change to distribution directory
+	files_dir = "/Users/Admin/Desktop/Code/Git/webapp-enhanced"
+	
+	run("mkdir %s" % name)
+	
+	run("cp -r %s/ ./%s" % (files_dir, name))
+	run("rm -rf ./%s/MANIFEST.in" % name)
+	run("rm -rf ./%s/temp" % name)
+	run("rm -rf ./%s/we" % name)
+	run("rm -rf ./%s/setup.py" % name)
+	run("rm -rf ./%s/settings.py" % name)
+	run("rm -rf ./%s/settings.pyc" % name)
+	run("rm -rf ./%s/build" % name)
+	run("rm -rf ./%s/dist" % name)
+	run("rm -rf ./%s/Webapp_Enhanced.egg-info" % name)
+
+def gen(g_type, name):
+	# TODO: change to distribution directory
+	temp_dir = "/Users/Admin/Desktop/Code/Git/webapp-enhanced/temp"
+	
+	s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+	lname = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+	
+	if g_type == "model":
+		run("mkdir ./views/%s" % lname)
+		run("cp %s/template-model-index ./views/%s/index.html" % (temp_dir, lname))
+		run("cp %s/template ./views/%s/new.html" % (temp_dir, lname))
+		run("cp %s/template-model-show ./views/%s/show.html" % (temp_dir, lname))
+		run("cp %s/controller-model ./controllers/%s.py" % (temp_dir, lname))
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+		run("cp %s/model ./models/%s.py" % (temp_dir, lname))
+		format("./models/%s.py" % lname, name = name, lname = lname)
+		
+	elif g_type == "controller":
+		run("cp %s/controller ./controllers/%s.py" % (temp_dir, lname))
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+		
+	elif g_type == "view":
+		run("mkdir ./views/%s" % lname)
+		run("cp %s/template ./views/%s/index.html" % (temp_dir, lname))
+		run("cp %s/controller-view ./controllers/%s.py" % (temp_dir, lname))
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+	
+	elif g_type == "blob":
+		run("mkdir ./views/%s" % lname)
+		run("cp %s/template-model-index ./views/%s/index.html" % (temp_dir, lname))
+		run("cp %s/template-blob-new ./views/%s/new.html" % (temp_dir, lname))
+		run("cp %s/template-model-show ./views/%s/show.html" % (temp_dir, lname))
+		run("cp %s/controller-blob ./controllers/%s.py" % (temp_dir, lname))
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+		run("cp %s/controller-blob-upload ./controllers/%s_upload.py" % (temp_dir, lname))
+		format("./controllers/%s_upload.py" % lname, name = name, lname = lname)
+		run("cp %s/controller-blob-download ./controllers/%s_download.py" % (temp_dir, lname))
+		format("./controllers/%s_download.py" % lname, name = name, lname = lname)
+		run("cp %s/model-blob ./models/%s.py" % (temp_dir, lname))
+		format("./models/%s.py" % lname, name = name, lname = lname)
+		
+	else:
+		raise IOError("Unknown type: %s" % g_type)
+
+def test(port):
+	run("clear")
+	run("dev_appserver.py . --port=%s" % port)
+
+def deploy():
+	run("clear")
+	run("appcfg.py update .")
+
+### Only for the program
+def run(command):
+	subprocess.call(command.split())
+
+def format(filepath, **kw):
+	with open(filepath, 'r+') as f:
+		old_content = f.read()
+		f.truncate()
+	new_content = old_content.format(**kw)
+	with open(filepath, 'w') as f:
+		f.write(new_content)
+
+### Parser instance
+parser = argparse.ArgumentParser(prog='we')
+
+parser.add_argument('-n', '--new', nargs=1, metavar='NAME',
+                    help="create a new project")
+parser.add_argument('-g', '--generate', nargs=2, metavar=('TYPE', 'NAME'),
+                    help="generate files for the project")
+parser.add_argument('-t', '--test', nargs=1, metavar='PORT', type=int,
+                    help="test the project on specified port")
+parser.add_argument('-d', '--deploy', action='store_true',
+                    help="deploy the project to app engine")
+
+args = parser.parse_args()
+
+
+### Actions
+if args.new:
+	new(*args.new)
+if args.generate:
+	gen(*args.generate)
+if args.test:
+	test(*args.test)
+if args.deploy:
+	deploy()
+if not (args.new or args.generate or args.test or args.deploy):
+	print 'type `we -h` to see all options available'
