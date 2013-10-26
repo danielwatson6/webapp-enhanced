@@ -33,9 +33,10 @@ def gen(g_type, name):
 	
 	if g_type == "model":
 		run("mkdir ./views/%s" % lname)
-		run("cp %s/template-model-index ./views/%s/index.html" % (temp_dir, lname))
-		run("cp %s/template ./views/%s/new.html" % (temp_dir, lname))
-		run("cp %s/template-model-show ./views/%s/show.html" % (temp_dir, lname))
+		run("mkdir ./abstract/haml/%s" % lname)
+		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
+		run("cp %s/template ./abstract/haml/%s/new.haml" % (temp_dir, lname))
+		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
 		run("cp %s/controller-model ./controllers/%s.py" % (temp_dir, lname))
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		run("cp %s/model ./models/%s.py" % (temp_dir, lname))
@@ -47,15 +48,17 @@ def gen(g_type, name):
 		
 	elif g_type == "view":
 		run("mkdir ./views/%s" % lname)
-		run("cp %s/template ./views/%s/index.html" % (temp_dir, lname))
+		run("mkdir ./abstract/haml/%s" % lname)
+		run("cp %s/template ./abstract/haml/%s/index.haml" % (temp_dir, lname))
 		run("cp %s/controller-view ./controllers/%s.py" % (temp_dir, lname))
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
 	
 	elif g_type == "blob":
 		run("mkdir ./views/%s" % lname)
-		run("cp %s/template-model-index ./views/%s/index.html" % (temp_dir, lname))
-		run("cp %s/template-blob-new ./views/%s/new.html" % (temp_dir, lname))
-		run("cp %s/template-model-show ./views/%s/show.html" % (temp_dir, lname))
+		run("mkdir ./abstract/haml/%s" % lname)
+		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
+		run("cp %s/template-blob-new ./abstract/haml/%s/new.haml" % (temp_dir, lname))
+		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
 		run("cp %s/controller-blob ./controllers/%s.py" % (temp_dir, lname))
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		run("cp %s/controller-blob-upload ./controllers/%s_upload.py" % (temp_dir, lname))
@@ -75,6 +78,26 @@ def test(port):
 def deploy():
 	run("clear")
 	run("appcfg.py update .")
+
+def compile_abs():
+	exclude = ['.DS_Store']
+	haml_dirs = [f for f in os.listdir('./abstract/haml') if not f in exclude]
+	sass_files = [f for f in os.listdir('./abstract/sass') if re.match(r'.+\.(sass|scss)', f)]
+	
+	haml_files = []
+	for d in haml_dirs:
+		if not d == 'base.haml':
+			current_files = [('%s/' % d) + f for f in os.listdir('./abstract/haml/%s' % d) if re.match(r'.+\.haml', f)]
+			haml_files = haml_files + current_files
+	
+	# Compilations
+	for f in haml_files:
+		run("haml abstract/haml/%s views/%s" % (f, f[:-4] + 'html'))
+	for f in sass_files:
+		run("sass abstract/sass/%s assets/css/%s" % (f, f[:-4] + 'css'))
+	run("coffee -c --output assets/js abstract/coffee/")
+	run("haml abstract/haml/base.haml views/base.html")
+	
 
 ### Only for the program
 def run(command):
@@ -99,6 +122,8 @@ parser.add_argument('-t', '--test', nargs=1, metavar='PORT', type=int,
                     help="test the project on specified port")
 parser.add_argument('-d', '--deploy', action='store_true',
                     help="deploy the project to app engine")
+parser.add_argument('-c', '--compile', action='store_true',
+                    help="compile abstracts (requires haml, sass, & coffee)")
 
 args = parser.parse_args()
 
@@ -112,5 +137,7 @@ if args.test:
 	test(*args.test)
 if args.deploy:
 	deploy()
-if not (args.new or args.generate or args.test or args.deploy):
+if args.compile:
+	compile_abs()
+if not (args.new or args.generate or args.test or args.deploy or args.compile):
 	print 'type `we -h` to see all options available'

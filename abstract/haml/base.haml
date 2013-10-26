@@ -1,0 +1,13 @@
+!!! 5
+%html
+	%head
+		%title Test
+		%link(rel="stylesheet" href="/assets/css/bootstrap.min.css")
+		%link(rel="stylesheet" href="/assets/css/style.css")
+	
+	%body
+		.container
+			{% block content %}{% endblock %}
+		%script(src="http://code.jquery.com/jquery-1.10.2.min.js")
+		%script(src="/assets/js/bootstrap.min.js")
+		%script(src="/assets/js/script")

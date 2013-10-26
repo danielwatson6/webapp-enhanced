@@ -12,33 +12,30 @@ class ParentController(server.BaseController):
 	
 	pass
 
+### All of the controllers below can be edited for custom actions
+### on all controllers that inherit the edited class.
 
+# This is the base controller for simple controllers.
 class Controller(server.Controller, ParentController):
-	
-	# This is the base controller for simple controllers.
 	pass
 
+# This is the base controller for model-supporting controllers.
 class ModelController(server.ModelController, ParentController):
-	
-	# This is the base controller for model-supporting controllers.
 	pass
 
+# This is the base controller for blob-supporting default controllers.
 class BlobController(server.BlobController, ParentController):
-	
-	# This is the base controller for blob-supporting default controllers.
 	pass
 
+# This is the base controller for blob-supporting upload controllers.
 class UploadController(server.UploadController, ParentController):
-	
-	# This is the base controller for blob-supporting upload controllers.
 	pass
 
+# This is the base controller for blob-supporting controllers.
 class DownloadController(server.DownloadController, ParentController):
-	
-	# This is the base controller for blob-supporting controllers.
 	pass
 
+# This is the base controller for low-level controllers.
 class CustomController(server.CustomController, ParentController):
-	
-	# This is the base controller for low-level controllers.
 	pass
+
