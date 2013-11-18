@@ -11,9 +11,13 @@ def new(name):
 	# TODO: change to distribution directory
 	files_dir = "/Users/Admin/Desktop/Code/Git/webapp-enhanced"
 	
+	print bcolors.green + "> Creating new project `%s`" % name + bcolors.end
 	run("mkdir %s" % name)
 	
+	print bcolors.green + "> Adding files" + bcolors.end
 	run("cp -r %s/ ./%s" % (files_dir, name))
+	
+	print bcolors.green + "> Removing units" + bcolors.end
 	run("rm -rf ./%s/MANIFEST.in" % name)
 	run("rm -rf ./%s/temp" % name)
 	run("rm -rf ./%s/we" % name)
@@ -23,6 +27,8 @@ def new(name):
 	run("rm -rf ./%s/build" % name)
 	run("rm -rf ./%s/dist" % name)
 	run("rm -rf ./%s/Webapp_Enhanced.egg-info" % name)
+	
+	print bcolors.green + "> Finished!" + bcolors.end
 
 def gen(g_type, name):
 	# TODO: change to distribution directory
@@ -32,50 +38,78 @@ def gen(g_type, name):
 	lname = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 	
 	if g_type == "model":
+		print bcolors.green + "> Generating %s `%s`" % (g_type, name) + bcolors.end
+		print bcolors.green + "> Adding files" + bcolors.end
 		run("mkdir ./views/%s" % lname)
 		run("mkdir ./abstract/haml/%s" % lname)
 		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
 		run("cp %s/template ./abstract/haml/%s/new.haml" % (temp_dir, lname))
 		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
 		run("cp %s/controller-model ./controllers/%s.py" % (temp_dir, lname))
-		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		run("cp %s/model ./models/%s.py" % (temp_dir, lname))
+		
+		print bcolors.green + "> Formatting code" + bcolors.end
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		format("./models/%s.py" % lname, name = name, lname = lname)
 		
 	elif g_type == "controller":
+		print bcolors.green + "> Generating %s `%s`" % (g_type, name) + bcolors.end
+		print bcolors.green + "> Adding files" + bcolors.end
 		run("cp %s/controller ./controllers/%s.py" % (temp_dir, lname))
+		
+		print bcolors.green + "> Formatting code" + bcolors.end
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		
 	elif g_type == "view":
+		print bcolors.green + "> Generating %s `%s`" % (g_type, name) + bcolors.end
+		print bcolors.green + "> Adding files" + bcolors.end
 		run("mkdir ./views/%s" % lname)
 		run("mkdir ./abstract/haml/%s" % lname)
 		run("cp %s/template ./abstract/haml/%s/index.haml" % (temp_dir, lname))
 		run("cp %s/controller-view ./controllers/%s.py" % (temp_dir, lname))
+		
+		print bcolors.green + "> Formatting code" + bcolors.end
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
 	
 	elif g_type == "blob":
+		print bcolors.green + "> Generating %s `%s`" % (g_type, name) + bcolors.end
+		print bcolors.green + "> Adding files" + bcolors.end
 		run("mkdir ./views/%s" % lname)
 		run("mkdir ./abstract/haml/%s" % lname)
 		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
 		run("cp %s/template-blob-new ./abstract/haml/%s/new.haml" % (temp_dir, lname))
 		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
 		run("cp %s/controller-blob ./controllers/%s.py" % (temp_dir, lname))
-		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		run("cp %s/controller-blob-upload ./controllers/%s_upload.py" % (temp_dir, lname))
-		format("./controllers/%s_upload.py" % lname, name = name, lname = lname)
 		run("cp %s/controller-blob-download ./controllers/%s_download.py" % (temp_dir, lname))
-		format("./controllers/%s_download.py" % lname, name = name, lname = lname)
 		run("cp %s/model-blob ./models/%s.py" % (temp_dir, lname))
+		
+		print bcolors.green + "> Formatting code" + bcolors.end
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+		format("./controllers/%s_upload.py" % lname, name = name, lname = lname)
+		format("./controllers/%s_download.py" % lname, name = name, lname = lname)
 		format("./models/%s.py" % lname, name = name, lname = lname)
 		
 	else:
-		raise IOError("Unknown type: %s" % g_type)
+		print bcolors.red + "> No setting found for type `%s`!" % g_type + bcolors.end
+		return
+	
+	print bcolors.green + "> Compiling abstracts" + bcolors.end
+	compile_abs()
+	
+	print bcolors.green + "> Finished!" + bcolors.end
 
 def test(port):
+	print bcolors.green + "> Compiling abstracts" + bcolors.end
+	compile_abs()
+	print bcolors.green + "> Starting appserver in port %s" % port + bcolors.end
 	run("clear")
 	run("dev_appserver.py . --port=%s" % port)
 
 def deploy():
+	print bcolors.green + "> Compiling abstracts" + bcolors.end
+	compile_abs()
+	print bcolors.green + "> Initiating deploy" + bcolors.end
 	run("clear")
 	run("appcfg.py update .")
 
@@ -126,6 +160,15 @@ parser.add_argument('-c', '--compile', action='store_true',
                     help="compile abstracts (requires haml, sass, & coffee)")
 
 args = parser.parse_args()
+
+# Print colored output
+class bcolors:
+    header = '\033[95m'
+    blue = '\033[94m'
+    green = '\033[92m'
+    yellow = '\033[93m'
+    red = '\033[91m'
+    end = '\033[0m'
 
 
 ### Actions
