@@ -35,7 +35,3 @@ class UploadController(server.UploadController, ParentController):
 class DownloadController(server.DownloadController, ParentController):
 	pass
 
-# This is the base controller for low-level controllers.
-class CustomController(server.CustomController, ParentController):
-	pass
-
