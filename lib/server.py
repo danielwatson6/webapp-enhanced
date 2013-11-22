@@ -258,7 +258,7 @@ class ModelController(BaseController):
 		if c:
 			new_entity = self.model(** c)
 			new_entity.put()
-			self.redirect('/%ss/%s' % (self._name, new_entity.key.id()))
+			self.redirect('/%s/%s' % (self._name, new_entity.key.id()))
 		else:
 			self.new()
 			self.render_appropriate(** self._params)
@@ -320,7 +320,7 @@ class ModelController(BaseController):
 class BlobController(ModelController):
 	
 	def get(self, *a):
-		upload_url = blobstore.create_upload_url('/%ss/upload' % self._name)
+		upload_url = blobstore.create_upload_url('/%s/upload' % self._name)
 		self.send_data(upload_url = upload_url)
 		ModelController.get(self, *a)
 	
@@ -369,13 +369,13 @@ class UploadController(blobstore_handlers.BlobstoreUploadHandler, ModelControlle
 				# Use current arguments left to create the model
 				new_entity = self.model(** c)
 				new_entity.put()
-				self.redirect('/%ss/%s' % (self._name, new_entity.key.id()))
+				self.redirect('/%s/%s' % (self._name, new_entity.key.id()))
 			else:
-				self.redirect('/%ss/new' % self._name)
+				self.redirect('/%s/new' % self._name)
 		
 		# Bounce back if form did not pass
 		else:
-			self.redirect('/%ss/new' % self._name)
+			self.redirect('/%s/new' % self._name)
 
 
 # Upload class for blob-serving controllers

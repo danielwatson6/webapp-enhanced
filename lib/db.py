@@ -22,13 +22,13 @@ class Model(ndb.Model):
     
     # Get an entity's URI
     def uri(self):
-        return '%ss/%s' % (utils.lowercase(self.__module__[7:]), self.key.id())
+        return '%s/%s' % (utils.lowercase(self.__module__[7:]), self.key.id())
     
     # Get an entity's blob-serving URI
     # Note: this only works for classes that inherit the
     #       BlobController class from the server module.
     def serve_uri(self):
-        return '/%ss/serve/%s' % (utils.lowercase(self.__module__[7:]), self.key.id())
+        return '/%s/serve/%s' % (utils.lowercase(self.__module__[7:]), self.key.id())
     
     # From class, create a new entity
     @classmethod
