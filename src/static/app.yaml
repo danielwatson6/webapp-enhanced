@@ -1,0 +1,25 @@
+# Base configuration
+application: foo
+
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+libraries:
+- name: webapp2
+  version: latest
+- name: jinja2
+  version: latest
+
+handlers:
+- url: /assets
+  static_dir: assets
+- url: /favicon\.ico
+  static_files: assets/img/favicon.ico
+  upload: favicon\.ico
+- url: .*
+  script: main.app
+
+error_handlers:
+- file: views/error/default_error.html

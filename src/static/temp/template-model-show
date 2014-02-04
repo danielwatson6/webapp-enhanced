@@ -1,0 +1,7 @@
+{% extends “layouts/base.html" %}
+
+{% block content %}
+
+%h1 {{ resource }}
+
+{% endblock %}

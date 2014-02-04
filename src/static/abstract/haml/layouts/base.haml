@@ -1,0 +1,13 @@
+!!! 5
+%html{lang: "en"}
+  %head
+    %title {% block title %}{% endblock %}
+    %meta{content: "width=device-width, initial-scale=1.0", name: "viewport"}/
+    %link{href: "/assets/css/style.css", rel: "stylesheet"}/
+  
+  %body
+    .container
+      {% block content %}{% endblock %}
+    
+    %script{src: "http://codeorigin.jquery.com/jquery-2.0.3.min.js"}
+    %script{src: "/assets/js/script.js"}

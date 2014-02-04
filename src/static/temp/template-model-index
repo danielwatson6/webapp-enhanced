@@ -1,0 +1,10 @@
+{% extends “layouts/base.html" %}
+
+{% block content %}
+
+%ul
+	{% for resource in resources %}
+	%li {{ resource }}
+	{% endfor %}
+
+{% endblock %}

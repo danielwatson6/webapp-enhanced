@@ -1,0 +1,8 @@
+{% extends “layouts/base.html" %}
+
+
+{% block content %}
+
+%h1 Hello, World!
+
+{% endblock %}

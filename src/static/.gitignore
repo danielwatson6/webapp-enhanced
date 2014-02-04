@@ -1,6 +1,10 @@
 *.py[cod]
 .sass_cache
 
+# Webapp Enhanced
+assets/
+views/
+
 # OS X
 .DS_Store
 Icon

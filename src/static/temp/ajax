@@ -1,0 +1,4 @@
+from controllers.core import AJAXController
+
+class {name}(AJAXController):
+	pass
