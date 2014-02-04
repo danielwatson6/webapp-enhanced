@@ -1,0 +1,215 @@
+#!/usr/bin/env python
+
+import os
+import re
+import glob
+import inspect
+import argparse
+import settings
+import subprocess
+
+
+# Get the path to this script's directory:
+DIR = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'static'))
+
+
+class Colors(object):
+	"""Class to color terminal output."""
+	
+	colors = {
+		'header': '\033[95m',
+		'blue': '\033[94m',
+		'green': '\033[92m',
+		'yellow': '\033[93m',
+		'red': '\033[91m',
+		'end': '\033[0m',
+	}
+	
+	@classmethod
+	def get(cls, color):
+		try:
+			return cls.colors[color]
+		except KeyError:
+			raise KeyError("Color not found: %s" % color)
+	
+	@classmethod
+	def color(cls, s, color):
+		return cls.get(color) + s + cls.get('end')
+
+
+def new(name):
+	"""Create a new webapp project."""
+	
+	print Colors.color("> Creating new project `%s`" % name, "green")
+	run('mkdir', name)
+	
+	print Colors.color("> Adding files", "green")
+	run("cp -r %s/ ./%s" % (DIR, name))
+	run("touch ./%s/README.md" % name)
+	
+	print Colors.color("> Removing units", "green")
+	run("rm -rf ./%s/temp" % name)
+	init_files = glob.glob('./%s/__init__.*' % name)
+	for f in init_files: os.remove(f)
+	run("touch ./%s/controllers/__init__.py" % name)
+	run("touch ./%s/lib/__init__.py" % name)
+	run("touch ./%s/models/__init__.py" % name)
+	
+	print Colors.color("> Finished!", "green")
+
+
+def gen(g_type, name):
+	"""Generate the desired files."""
+	
+	# Lowercase-formatted name
+	lname = re.sub('([a-z0-9])([A-Z])', r'\1_\2',
+				   re.sub('(.)([A-Z][a-z]+)',r'\1_\2', name)).lower()
+	
+	temp_dir = DIR + '/temp'
+	
+	# Stop if the g_type is invalid:
+	if not g_type in ["model", "ajax", "view", "blob"]:
+		print Colors.color("> No setting found for type `%s`!" % g_type, "red")
+		return
+	
+	print Colors.color("> Generating %s `%s`" % (g_type, name), "green")
+	print Colors.color("> Adding files", "green")
+	
+	if g_type == "model":
+		run("mkdir ./views/%s" % lname)
+		run("mkdir ./abstract/haml/%s" % lname)
+		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
+		run("cp %s/template ./abstract/haml/%s/new.haml" % (temp_dir, lname))
+		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
+		run("cp %s/controller-model ./controllers/%s.py" % (temp_dir, lname))
+		run("cp %s/model ./models/%s.py" % (temp_dir, lname))
+		
+		print Colors.color("> Formatting code", "green")
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+		format("./models/%s.py" % lname, name = name, lname = lname)
+	
+	elif g_type == "ajax":
+		run("cp %s/ajax ./controllers/%s.py" % (temp_dir, lname))
+		
+		print Colors.color("> Formatting code", "green")
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+		
+	elif g_type == "view":
+		run("mkdir ./views/%s" % lname)
+		run("mkdir ./abstract/haml/%s" % lname)
+		run("cp %s/template ./abstract/haml/%s/index.haml" % (temp_dir, lname))
+		run("cp %s/controller-view ./controllers/%s.py" % (temp_dir, lname))
+		
+		print Colors.color("> Formatting code", "green")
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+	
+	elif g_type == "blob":
+		run("mkdir ./views/%s" % lname)
+		run("mkdir ./abstract/haml/%s" % lname)
+		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
+		run("cp %s/template-blob-new ./abstract/haml/%s/new.haml" % (temp_dir, lname))
+		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
+		run("cp %s/controller-blob ./controllers/%s.py" % (temp_dir, lname))
+		run("cp %s/controller-blob-upload ./controllers/%s_upload.py" % (temp_dir, lname))
+		run("cp %s/controller-blob-download ./controllers/%s_download.py" % (temp_dir, lname))
+		run("cp %s/model-blob ./models/%s.py" % (temp_dir, lname))
+		
+		print Colors.color("> Formatting code", "green")
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+		format("./controllers/%s_upload.py" % lname, name = name, lname = lname)
+		format("./controllers/%s_download.py" % lname, name = name, lname = lname)
+		format("./models/%s.py" % lname, name = name, lname = lname)
+	
+	print Colors.color("> Compiling abstracts", "green")
+	compile_abs()
+	
+	print Colors.color("> Finished!", "green")
+
+
+def test(port):
+	"""Start a local server in the given port."""
+	
+	print Colors.color("> Compiling abstracts", "green")
+	compile_abs()
+	print Colors.color("> Starting appserver in port %s" % port, "green")
+	run("dev_appserver.py . --port=%s" % port)
+
+
+def deploy():
+	"""Publish the app to google app engine."""
+	
+	print Colors.color("> Compiling abstracts", "green")
+	compile_abs()
+	print Colors.color("> Initiating deploy", "green")
+	run("appcfg.py update .")
+
+
+def compile_abs():
+	"""Compile all haml, sass, and coffee files."""
+	
+	exclude = ['.DS_Store']
+	haml_dirs = [f for f in os.listdir('./abstract/haml') if not f in exclude]
+	sass_files = [f for f in os.listdir('./abstract/sass') if re.match(r'.+\.(sass|scss)', f)]
+	
+	haml_files = []
+	for d in haml_dirs:
+		current_files = [('%s/' % d) + f for f in os.listdir('./abstract/haml/%s' % d) if re.match(r'.+\.haml', f)]
+		haml_files = haml_files + current_files
+	
+	# Compilations
+	for f in haml_files:
+		run("haml abstract/haml/%s views/%s" % (f, f[:-4] + 'html'))
+	for f in sass_files:
+		run("sass abstract/sass/%s assets/css/%s" % (f, f[:-4] + 'css'))
+	run("coffee -c --output assets/js abstract/coffee/")
+	
+
+# Miscelaneous stuff:
+
+def run(*statement):
+	"""Run a bash statement in the console."""
+	command = []
+	for s in list(statement):
+		s = s.split()
+		for i in s: command.append(i)
+	subprocess.call(command)
+
+def format(filepath, **kw):
+	"""Add the proper names to a code template."""
+	with open(filepath, 'r+') as f:
+		old_content = f.read()
+		f.truncate()
+	new_content = old_content.format(**kw)
+	with open(filepath, 'w') as f:
+		f.write(new_content)
+
+
+# Join the methods to form the command-line tool:
+parser = argparse.ArgumentParser(prog='we')
+
+parser.add_argument('-n', '--new', nargs=1, metavar='NAME',
+					help="create a new project")
+parser.add_argument('-g', '--generate', nargs=2, metavar=('TYPE', 'NAME'),
+					help="generate files for the project")
+parser.add_argument('-t', '--test', nargs=1, metavar='PORT', type=int,
+					help="test the project on specified port")
+parser.add_argument('-d', '--deploy', action='store_true',
+					help="deploy the project to app engine")
+parser.add_argument('-c', '--compile', action='store_true',
+					help="compile abstracts (requires haml, sass, & coffee)")
+
+args = parser.parse_args()
+
+
+if args.new:
+	new(*args.new)
+if args.generate:
+	gen(*args.generate)
+if args.test:
+	test(*args.test)
+if args.deploy:
+	deploy()
+if args.compile:
+	compile_abs()
+if not (args.new or args.generate or args.test or args.deploy or args.compile):
+	print 'type `we -h` to see all options available'
