@@ -68,10 +68,6 @@ class Model(ndb.Model):
 		"""Return the link for the entity's edit page."""
 		return self.link() + '/edit'
 	
-	def destroy_link(self):
-		"""Return the link to destroy the entity."""
-		return self.link() + '/destroy'
-	
 	def get_id(self):
 		"""Shortcut for key.id()"""
 		return self.key.id()
@@ -132,8 +128,8 @@ class BaseValidator(object):
 		
 		A validate() method takes in a field and will either
 		return its value (possibly modifying it) or raise
-		a ValidationError.
-		(Note: the ValidationError should contain self.message)
+		a IOError.
+		(Note: the IOError should contain self.message)
 		
 		Validators may also contain StopValidation to automatically
 		pass.
@@ -149,14 +145,14 @@ class AnyOf(BaseValidator):
 	
 	def validate(self, field):
 		if field in self.values: return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 
 class Email(BaseValidator):
 	"""Validator that checks if the input is a valid email."""
 	
 	def validate(self, field):
 		if re.match(EMAIL_RE, field): return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 
 class EqualTo(BaseValidator):
 	"""Validator that checks if the input is equal to a certain value."""
@@ -167,7 +163,7 @@ class EqualTo(BaseValidator):
 	
 	def validate(self, field):
 		if field == self.default_value: return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 
 class Length(BaseValidator):
 	"""Validator that checks if the input's length is between a certain range."""
@@ -179,7 +175,7 @@ class Length(BaseValidator):
 	
 	def validate(self, field):
 		if self.min <= len(field) <= self.max: return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 
 class NoneOf(BaseValidator):
 	"""Validator that checks if the input is not in the given values."""
@@ -190,7 +186,7 @@ class NoneOf(BaseValidator):
 	
 	def validate(self, field):
 		if not (field in self.values): return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 
 class NumberRange(BaseValidator):
 	"""Validator that checks if the input's length is between a certain range."""
@@ -204,7 +200,7 @@ class NumberRange(BaseValidator):
 		if not self.min: self.min = field
 		if not self.max: self.max = field
 		if self.min <= field <= self.max: return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 
 class Optional(BaseValidator):
 	"""Validator that makes the value pass automatically if it's empty."""
@@ -223,14 +219,14 @@ class Regexp(BaseValidator):
 	
 	def validate(self, field):
 		if re.match(self.regex, field): return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 
 class Required(BaseValidator):
 	"""Validator that checks if the input is not empty."""
 	
 	def validate(self, field):
 		if field is not None and field != '': return field
-		raise ValidationError(self.message, validator=self, field=field)
+		raise IOError(self.message)
 		
 
 class StopValidation(Exception):

@@ -1,9 +1,9 @@
 """
 
 TO-DO's:
-- Make the put() code in both Model and BlobModel.
-- Fix the delete() issue (the page needs to be refreshed twice to see changes)
-
+- Make the put() code in BlobModel. (EDIT: It's done in ModelController.)
+- Fix the delete() issue (sometimes the page needs to be refreshed twice
+                          to see the changes)
 """
 
 
@@ -180,19 +180,19 @@ class BaseController(webapp2.RequestHandler):
 	
 	def get(self, *a):
 		"""Handle GET requests."""
-		self.init()
+		self.init(*a)
 	
 	def post(self, *a):
 		"""Handle POST requests."""
-		self.init()
+		self.init(*a)
 	
 	def put(self, *a):
 		"""Handle PUT requests."""
-		self.init()
+		self.init(*a)
 	
 	def delete(self, *a):
 		"""Handle DELETE requests."""
-		self.init()
+		self.init(*a)
 	
 	
 	### Functional methods:
@@ -246,6 +246,22 @@ class BaseController(webapp2.RequestHandler):
 		self.response.headers["Content-Type"] = "application/xml"
 		xml_txt = xml.dicttoxml(d)
 		self.response.out.write(xml_txt)
+	
+	def intercept(self, *a):
+		"""Check for a hidden form to perform appropriate method.
+		Called by post().
+		"""
+		data = self.get_data("_method")
+		if data['_method'] == 'PUT':
+			logging.info("Intercept: PUT" )
+			self.put(*a)
+			return True
+		if data['_method'] == 'DELETE':
+			logging.info("Intercept: DELETE")
+			self.delete(*a)
+			return True
+	
+	
 
 class Controller(BaseController):
 	"""Controller for simple pages.
@@ -262,10 +278,10 @@ class Controller(BaseController):
 		
 		# Check for authorization:
 		if not self.authorized():
-			self.error(401)
+			self.abort(401)
 		
 		# Actions from index method:
-		self.index()
+		self.index(*a)
 		
 		# Check if render flag is on:
 		if self._flags["render"]:
@@ -293,9 +309,9 @@ class ModelController(BaseController):
 		mode = self.get_mode()
 		if mode == "index":
 			self.get_resources()
-			self.index()
+			self.index(*a)
 		elif mode == "new":
-			self.new()
+			self.new(*a)
 		elif mode == "show":
 			resource = self.get_resource(list(a)[0])
 			self.show(*a)
@@ -310,20 +326,43 @@ class ModelController(BaseController):
 	def post(self, *a):
 		BaseController.post(self, *a)
 		
+		if self.intercept(*a): return 	# Catches PUT and DELETE methods
+		
 		form = self.model.form
-		if form is not None:
-			data = self.get_data(*form.keys())
+		assert form is not None
+		
+		data = self.get_data(*form.keys())
 		
 		try:
 			new_entity = self.model(validate=True, **data)
 			new_entity.put()
 			return self.redirect('/%ss/%s' % (self._name, new_entity.get_id()))
-		except:		# TO-DO: Add proper handling
+		
+		# NOTE: An IOError is raised when validation fails.
+		except IOError:
 			self.redirect('/%ss/new' % self._name)
 	
-	# TO-DO!!!
 	def put(self, *a):
-		pass
+		BaseController.put(self, *a)
+		
+		form = self.model.form
+		assert form is not None
+		
+		data = self.get_data(*form.keys())
+		
+		resource = self.get_resource(list(a)[0])
+		if resource is not None:
+			self.abort(404)
+		
+		for name, value in data.items():
+			if value != getattr(resource, name):
+				try:
+					for validator in form[name]:
+						value = validator(value)
+					setattr(resource, name, value)
+				except IOError: pass
+		resource.put()
+		return self.redirect(resource.link())
 	
 	# TO-DO: Refresh the index page; resource still 'appears' after redirect.
 	def delete(self, *a):
@@ -374,23 +413,9 @@ class ModelController(BaseController):
 		
 		resource = ndb.Key(self.model.__name__, int(resource_id)).get()
 		if not resource:
-			return self.error(404)
+			self.abort(404)
 		self._params['resource'] = resource
 		return resource
-	
-	def intercept(self, *a):
-		"""Check for a hidden form to perform appropriate method.
-		Called by post().
-		"""
-		data = self.get_data("_method")
-		if data['_method'] == 'PUT':
-			logging.info("Intercept: PUT" )
-			self.put(*a)
-			return True
-		if data['_method'] == 'DELETE':
-			logging.info("Intercept: DELETE")
-			self.delete(*a)
-			return True
 	
 	### Methods child classes may override:
 	
@@ -449,7 +474,7 @@ class BlobController(ModelController):
 		nothing is done here.
 		"""
 		BaseController.post(self, *a)
-		if self.intercept(*a): return
+		if self.intercept(*a): return 	# Catches PUT and DELETE methods
 
 
 # TO-DO: Major edit along ModelController's POST and PUT.
@@ -479,6 +504,8 @@ class UploadController(blobstore_handlers.BlobstoreUploadHandler, ModelControlle
 	
 	def post(self, *a):
 		BaseController.post(self, *a)
+		
+		if self.intercept(*a): return 	# Catches PUT and DELETE methods
 		
 		form = self.model.form
 		if form is not None:
