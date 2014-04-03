@@ -81,6 +81,7 @@ def gen(g_type, name):
 		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
 		run("cp %s/template ./abstract/haml/%s/new.haml" % (temp_dir, lname))
 		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
+		run("cp %s/template-model-edit ./abstract/haml/%s/edit.haml" % (temp_dir, lname))
 		run("cp %s/controller-model ./controllers/%s.py" % (temp_dir, lname))
 		run("cp %s/model ./models/%s.py" % (temp_dir, lname))
 		
@@ -109,6 +110,7 @@ def gen(g_type, name):
 		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
 		run("cp %s/template-blob-new ./abstract/haml/%s/new.haml" % (temp_dir, lname))
 		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
+		run("cp %s/template-model-edit ./abstract/haml/%s/edit.haml" % (temp_dir, lname))
 		run("cp %s/controller-blob ./controllers/%s.py" % (temp_dir, lname))
 		run("cp %s/controller-blob-upload ./controllers/%s_upload.py" % (temp_dir, lname))
 		run("cp %s/controller-blob-download ./controllers/%s_download.py" % (temp_dir, lname))

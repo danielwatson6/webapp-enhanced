@@ -1,27 +1,17 @@
-"""
-
-TO-DO's:
-- Make the put() code in BlobModel. (EDIT: It's done in ModelController.)
-- Fix the delete() issue (sometimes the page needs to be refreshed twice
-                          to see the changes)
-"""
-
-
 import os
 import re
 import cgi
 import json
 import urllib
 import logging
+import importlib
 
 import webapp2
 import jinja2
 
 from lib.xml import dicttoxml as xml
 
-from lib import utils
 from google.appengine.ext import ndb, blobstore
-from google.appengine.ext.webapp import blobstore_handlers
 
 
 # Jinja2 variables
@@ -82,10 +72,6 @@ class Response(webapp2.Response):
 		"""Render and display a template."""
 		html = render_str(filename, ** params)
 		self.out.write(html)
-		
-	def del_cookie(self, *a, **kw):
-		"""Delete a cookie from the client."""
-		self.delete_cookie(*a, **kw)
 	
 	def set_content(self, t):
 		"""Shortcut to set the Content-Type header."""
@@ -113,6 +99,7 @@ class Application(webapp2.WSGIApplication):
 	def __init__(self, controllers):
 		self._controller_map = []
 		
+		# User-defined routes:
 		for c in controllers:
 			
 			# Check if a path is already specified:
@@ -121,14 +108,15 @@ class Application(webapp2.WSGIApplication):
 			else:
 				
 				# Set a default path instead:
-				current = '/' + utils.lowercase(c.__name__)
+				current = '/' + _lowercase(c.__name__)
 				if c._supports_model: current += 's'
 			
 			# Add the mappings:
+			
 			self._controller_map.append((current + r'(?:\.(.+))?', c)) # Index page (extension allowed).
 			
 			# Extra maps for controllers linked to models:
-			if c._supports_model and not c._blob_class:
+			if c._supports_model:
 				self._controller_map.append((current + r'/new', c)) # Create page.
 				self._controller_map.append((current + r'/([0-9]+)(?:\.(.+))?', c)) # Show page (extension allowed).
 				self._controller_map.append((current + r'/([0-9]+)/edit', c)) # Edit page.
@@ -142,6 +130,10 @@ class Application(webapp2.WSGIApplication):
 	def initialize(self, **kw):
 		"""Actually initialize the Application instance."""
 		super(Application, self).__init__(self._controller_map, **kw)
+	
+	def add_route(self, path_re, controller):
+		"""Add a route manually."""
+		self._controller_map.append((path_re, controller))
 
 
 class BaseController(webapp2.RequestHandler):
@@ -156,16 +148,11 @@ class BaseController(webapp2.RequestHandler):
 	# the extra mappings for controllers linked to models.
 	_supports_model = False
 	
-	# Upload and download classes are model-supporting, but do not
-	# need the extra mappings.
-	_blob_class = False
-	
 	
 	### Methods child classes may override:
 	
-	def authorized(self):
-		"""If not authorized, send a 401 error."""
-		return True
+	def deny_access(self):
+		self.abort(401)
 	
 	def index(self, *a):
 		"""When showing the index.html page."""
@@ -195,36 +182,34 @@ class BaseController(webapp2.RequestHandler):
 		self.init(*a)
 	
 	
-	### Functional methods:
+	### Functions:
 	
 	def initialize(self, *a, **kw):
 		"""Default actions."""
 		super(BaseController, self).initialize(*a, **kw)
 		
 		# Set the variable-like name for the class:
-		self._name = utils.lowercase(self.__class__.__name__)
+		self._name = _lowercase(self.__class__.__name__)
 		
-		self._params = {}		# Params for the views
+		self._params = {}		# Arguments that pass to templates
 		
-		# Miscellaneous flags:
+		# Arguments used only by the server:
 		self._flags = {
 			"render": True,
+			"errors": None,
 		}
 	
 	def get_flag(self, f):
 		"""Get the specified flag's value."""
 		try:
 			return self._flags[f]
-		except KeyError:
-			logging.exception("Unknown flag: `%s`" % f)
-			raise
+		except KeyError: pass
 	
 	def set_flag(self, f, value):
 		"""Change a flag's value, or add a new flag."""
 		self._flags[f] = value
 		return value
 	
-	# TO-DO: Automate this based on form
 	def get_data(self, *a):
 		"""Fetch arguments and their values from the request."""
 		return {i: self.request.get(i) for i in list(a)}
@@ -251,17 +236,16 @@ class BaseController(webapp2.RequestHandler):
 		"""Check for a hidden form to perform appropriate method.
 		Called by post().
 		"""
-		data = self.get_data("_method")
-		if data['_method'] == 'PUT':
+		method = self.request.get("_method")
+		if method == 'PUT':
 			logging.info("Intercept: PUT" )
 			self.put(*a)
 			return True
-		if data['_method'] == 'DELETE':
+		if method == 'DELETE':
 			logging.info("Intercept: DELETE")
 			self.delete(*a)
 			return True
-	
-	
+
 
 class Controller(BaseController):
 	"""Controller for simple pages.
@@ -272,13 +256,8 @@ class Controller(BaseController):
 	
 	def get(self, *a):
 		"""Handle GET requests.
-		This calls the authorized() and index() methods.
 		"""
 		super(Controller, self).get(*a)
-		
-		# Check for authorization:
-		if not self.authorized():
-			self.abort(401)
 		
 		# Actions from index method:
 		self.index(*a)
@@ -332,15 +311,19 @@ class ModelController(BaseController):
 		assert form is not None
 		
 		data = self.get_data(*form.keys())
+		self.set_flag('inputs', data)
 		
 		try:
 			new_entity = self.model(validate=True, **data)
 			new_entity.put()
-			return self.redirect('/%ss/%s' % (self._name, new_entity.get_id()))
+			self.create(new_entity)		# This is called in child classes after default stuff is done.
+			return self.redirect(new_entity.link())
 		
 		# NOTE: An IOError is raised when validation fails.
 		except IOError:
-			self.redirect('/%ss/new' % self._name)
+			self.set_flag('errors', self.model.get_errors(form, data))
+			self.create(None)
+			self.get(*a)
 	
 	def put(self, *a):
 		BaseController.put(self, *a)
@@ -351,7 +334,7 @@ class ModelController(BaseController):
 		data = self.get_data(*form.keys())
 		
 		resource = self.get_resource(list(a)[0])
-		if resource is not None:
+		if resource is None:
 			self.abort(404)
 		
 		for name, value in data.items():
@@ -362,6 +345,7 @@ class ModelController(BaseController):
 					setattr(resource, name, value)
 				except IOError: pass
 		resource.put()
+		self.update(resource)			# This is the overriden actions after updating the resource.
 		return self.redirect(resource.link())
 	
 	# TO-DO: Refresh the index page; resource still 'appears' after redirect.
@@ -370,9 +354,12 @@ class ModelController(BaseController):
 		Will destroy the current resource.
 		"""
 		self._flags["render"] = False
-		resource = self.get_resource(list(a)[0])
-		resource.destroy()
-		logging.info("Deleted resource. Redirecting to /%ss" % self._name)
+		resource_id = self.request.get("_resource_id")
+		resource = self.get_resource(resource_id)
+		if resource:
+			self.destroy(resource)		# Overridable
+			resource.destroy()
+			logging.info("DELETE %r" % resource)
 		self.redirect('/%ss' % self._name)
 	
 	def get_mode(self):
@@ -396,7 +383,7 @@ class ModelController(BaseController):
 			resources = self.get_resources()
 			self.response.render(self._name + '/index.html', resources = resources, **params)
 		
-		# Resource page:
+		# Resoucrce page:
 		elif mode == "show":
 			self.response.render(self._name + '/show.html', **params)
 		
@@ -419,135 +406,35 @@ class ModelController(BaseController):
 	
 	### Methods child classes may override:
 	
-	def new(self):
+	def new(self, *a):
 		"""When displaying new.html."""
-		pass
 	
-	def create(self):
+	def create(self, resource):
 		"""When creating an entity.
 		Called on a POST request.
 		"""
-		pass
 	
 	def show(self, *a):
 		"""When displaying show.html."""
-		pass
 	
 	def edit(self, *a):
 		"""When displaying edit.html."""
-		pass
 	
-	def update(self, *a):
+	def update(self, resource):
 		"""When modifying an entity.
 		Called on a PUT request.
 		"""
-		pass
+	
+	def destroy(self, resource):
+		"""When attempting to destroy an entity.
+		Called on DELETE request.
+		"""
 	
 	def get_resources(self):
 		"""Get the resources from the linked model.
 		Called when displaying index.html.
 		"""
 		return self.model.all()
-
-
-# TO-DO: Implement this on the default Model Controller class.
-# TO-DO: Add support for multiple blobs.
-class BlobController(ModelController):
-	"""Model Controller with blob support.
-	
-	BlobController classes are only used to link with the model
-	and to instruct the use of the Upload Controller.
-	
-	"""
-	
-	def get(self, *a):
-		"""Handle GET requests.
-		This will always send the upload url for the HTML form.
-		"""
-		upload_url = blobstore.create_upload_url('/%ss/upload' % self._name)
-		self.send_data(upload_url = upload_url)
-		super(BlobController, self).get(*a)
-	
-	def post(self, *a):
-		"""Handle POST requests.
-		Since the Upload Controller handles the POST requests,
-		nothing is done here.
-		"""
-		BaseController.post(self, *a)
-		if self.intercept(*a): return 	# Catches PUT and DELETE methods
-
-
-# TO-DO: Major edit along ModelController's POST and PUT.
-# TO-DO: Support for PUT requests.
-class UploadController(blobstore_handlers.BlobstoreUploadHandler, ModelController):
-	"""Controller that handles POST requests for the Blob Controller.
-	
-	The UploadController classes require a link with their Blob Controller.
-	
-	"""
-	_blob_class = True
-	
-	# Controller that the class supports:
-	default_class = None
-	
-	def upload(self):
-		"""Upload a blob to the Blobstore."""
-		try:
-			return self.get_uploads()[0]
-		except IndexError: pass
-	
-	def init(self):
-		self.model = self.default_class.model
-	
-	def get(self, *a):
-		self.error(405)
-	
-	def post(self, *a):
-		BaseController.post(self, *a)
-		
-		if self.intercept(*a): return 	# Catches PUT and DELETE methods
-		
-		form = self.model.form
-		if form is not None:
-			data = self.get_data(*form.keys())
-			
-		upload = self.upload()
-		if upload:
-			data['blob'] = str(upload.key())
-			new_entity = self.model(validate=True, **data)
-			new_entity.put()
-			
-			return self.redirect('/%ss/%s' % (self._name, new_entity.get_id()))
-		
-		self.redirect('/%ss/new' % self._name)
-
-
-# TO-DO: Use a single download controller for everything,
-# instead of having one per Blob Controller.
-class DownloadController(blobstore_handlers.BlobstoreDownloadHandler, ModelController):
-	"""Controller that handles file downloads.
-	
-	Download Controllers also require a link with their Blob Controller.
-	
-	"""
-	_blob_class = True
-	
-	# Controller that the class supports:
-	default_class = None
-	
-	def download(self):
-		"""When downloading files from the Blobstore."""
-		pass
-	
-	def init(self, *a):
-		self.model = self.default_class.model
-	
-	def get(self, resource, *a):
-		BaseController.get(self, resource)
-		entity = self.model.get_by_id(long(resource))
-		resource = str(urllib.unquote(entity.blob))
-		blob_info = blobstore.BlobInfo.get(resource)
-		self.send_blob(blob_info)
 
 
 class AJAXController(BaseController):
@@ -599,3 +486,9 @@ class AJAXController(BaseController):
 		super(AJAXController, self).delete(*a)
 		self.DELETE(*a)
 
+
+# This is used within the module.
+def _lowercase(s):
+	"""Convert class-like names to varliable-like names."""
+	s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
+	return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()

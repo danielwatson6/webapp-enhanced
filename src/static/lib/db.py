@@ -1,8 +1,7 @@
 import re
 import logging
 
-from lib import utils
-from google.appengine.ext import ndb, blobstore
+from google.appengine.ext import ndb
 
 
 EMAIL_RE = r'.*'		# TO-DO: Add a real regexp.
@@ -20,7 +19,6 @@ class Model(ndb.Model):
 			
 			assert type(form) == dict
 			validated_form = self.validate(form, dict(kw))
-			logging.info(validated_form)
 			super(Model, self).__init__(*a, **validated_form)
 			
 		else:
@@ -35,6 +33,18 @@ class Model(ndb.Model):
 				except StopValidation: break	# Automatically pass
 		return result
 	
+	@staticmethod
+	def get_errors(form, data):
+		result = {}
+		for field in form:
+			for validator in form[field]:
+				try:
+					validator(data[field])
+				except IOError as i:
+					result[field] = i.message
+				except StopValidation: break
+		return result
+	
 	@classmethod
 	def create(cls, **properties):
 		"""Create and save an instance from this model."""
@@ -44,25 +54,15 @@ class Model(ndb.Model):
 	@classmethod
 	def find(cls, id_):
 		"""Fetch the entity with the specified id, otherwise return None."""
-		return ndb.Key(cls, id_).get()
+		return ndb.Key(cls, int(id_)).get()
 	
 	def destroy(self):
 		"""Remove the entity from the datastore."""
 		self.key.delete()
 	
-	@classmethod
-	def index_link(cls):
-		"""Return the link for the index page."""
-		pass
-	
-	@classmethod
-	def new_link(cls):
-		"""Return the link for the new page."""
-		pass
-	
 	def link(self):
 		"""Return the link for the entity's show page."""
-		return '/%ss/%s' % (utils.lowercase(self.__module__[7:]), self.key.id())
+		return '/%ss/%s' % (_lowercase(self.__module__[7:]), self.key.id())
 	
 	def edit_link(self):
 		"""Return the link for the entity's edit page."""
@@ -70,7 +70,7 @@ class Model(ndb.Model):
 	
 	def get_id(self):
 		"""Shortcut for key.id()"""
-		return self.key.id()
+		return str(self.key.id())
 	
 	@classmethod
 	def fetch(cls, n):
@@ -82,43 +82,12 @@ class Model(ndb.Model):
 		"""Get all the model's entities from the datastore."""
 		return cls.query().fetch()
 
-class BlobModel(Model):
-	"""Model class that supports blobs.
-	
-	The BlobModel class adds the default `blob_key` property
-	and methods that support it.
-	
-	"""
-	blob = ndb.StringProperty(required = True)
-	
-	def filename(self):
-		"""Get the blob's filename."""
-		obj = blobstore.BlobInfo.get(self.blob)
-		return obj.filename
-	
-	def size(self):
-		"""Get the blob's size in bytes."""
-		obj = blobstore.BlobInfo.get(self.blob)
-		return obj.size
-	
-	def download_link(self):
-		"""Get the blob's download page."""
-		return '/%ss/serve/%s' % (utils.lowercase(self.__module__[7:]), self.key.id())
-	
-	def get_blob_filename(blob):
-		"""Get the uploaded blob's filename."""
-		s = re.findall(r'filename=".+"')[0]
-		return s.split('"')[1]
-
 
 class BaseValidator(object):
 	"""Class for creating individual validator instances."""
 	
-	def __init__(self, message=""):
-		if message != "":
-			self.message = message
-		else:
-			self.message = "Please correct this field."
+	def __init__(self, message="Please correct this field."):
+		self.message = message
 	
 	def __call__(self, field):
 		return self.validate(field)
@@ -227,15 +196,14 @@ class Required(BaseValidator):
 	def validate(self, field):
 		if field is not None and field != '': return field
 		raise IOError(self.message)
-		
+
 
 class StopValidation(Exception):
 	"""Error thrown by validators to indicate to stop the validation."""
 
 
-# We assemble the default validators here to keep the module's structure.
 class validators(object):
-	"""Collection of validators."""
+	"""Validators shortcut."""
 	
 	any_of = AnyOf
 	email = Email
@@ -248,16 +216,22 @@ class validators(object):
 	required = Required
 
 
-### Properties:
-class generic(ndb.GenericProperty): pass
-class string(ndb.StringProperty): pass
-class integer(ndb.IntegerProperty): pass
-class boolean(ndb.BooleanProperty): pass
-class double(ndb.FloatProperty): pass
-class text(ndb.TextProperty): pass
-class date(ndb.DateProperty): pass
-class user(ndb.UserProperty): pass
-class key(ndb.KeyProperty): pass
-class pickle(ndb.PickleProperty): pass
-class json(ndb.JsonProperty): pass
+### Model properties:
+generic = ndb.GenericProperty
+string = ndb.StringProperty
+integer = ndb.IntegerProperty
+boolean = ndb.BooleanProperty
+double = ndb.FloatProperty
+text = ndb.TextProperty
+date = ndb.DateProperty
+user = ndb.UserProperty
+key = ndb.KeyProperty
+pickle = ndb.PickleProperty
+json = ndb.JsonProperty
 
+
+# This is used within the module.
+def _lowercase(s):
+	"""Convert class-like names to varliable-like names."""
+	s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
+	return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
