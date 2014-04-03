@@ -1,8 +1,0 @@
-from {lname} import {name} as {name}Controller
-from controllers.core import DownloadController
-
-class {name}(DownloadController):
-	r'/{lname}s/serve/([^/]+)?'
-	
-	# Associated Controller
-	default_class = {name}Controller

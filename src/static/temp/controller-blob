@@ -1,7 +1,0 @@
-from controllers.core import BlobController
-from models.{lname} import {name}Model
-
-class {name}(BlobController):
-	
-	# Associated Model
-	model = {name}Model

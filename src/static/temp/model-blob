@@ -1,4 +1,0 @@
-from lib import db
-
-class {name}Model(db.BlobModel):
-	pass

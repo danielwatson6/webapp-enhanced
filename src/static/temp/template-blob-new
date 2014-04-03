@@ -1,9 +1,0 @@
-{% extends "layouts/base.html" %}
-
-{% block content %}
-
-%form{method: "post", enctype: "multipart/form-data", action: "{{ upload_url }}"}
-	
-	%input{name: "blob", type: "file"} 	{# Mandatory argument for blobs #}
-
-{% endblock %}

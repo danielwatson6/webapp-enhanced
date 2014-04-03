@@ -104,35 +104,12 @@ def gen(g_type, name):
 		print Colors.color("> Formatting code", "green")
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
 	
-	elif g_type == "blob":
-		run("mkdir ./views/%s" % lname)
-		run("mkdir ./abstract/haml/%s" % lname)
-		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
-		run("cp %s/template-blob-new ./abstract/haml/%s/new.haml" % (temp_dir, lname))
-		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
-		run("cp %s/template-model-edit ./abstract/haml/%s/edit.haml" % (temp_dir, lname))
-		run("cp %s/controller-blob ./controllers/%s.py" % (temp_dir, lname))
-		run("cp %s/controller-blob-upload ./controllers/%s_upload.py" % (temp_dir, lname))
-		run("cp %s/controller-blob-download ./controllers/%s_download.py" % (temp_dir, lname))
-		run("cp %s/model-blob ./models/%s.py" % (temp_dir, lname))
-		
-		print Colors.color("> Formatting code", "green")
-		format("./controllers/%s.py" % lname, name = name, lname = lname)
-		format("./controllers/%s_upload.py" % lname, name = name, lname = lname)
-		format("./controllers/%s_download.py" % lname, name = name, lname = lname)
-		format("./models/%s.py" % lname, name = name, lname = lname)
-	
-	print Colors.color("> Compiling abstracts", "green")
-	compile_abs()
-	
 	print Colors.color("> Finished!", "green")
 
 
 def test(port):
 	"""Start a local server in the given port."""
 	
-	print Colors.color("> Compiling abstracts", "green")
-	compile_abs()
 	print Colors.color("> Starting appserver in port %s" % port, "green")
 	run("dev_appserver.py . --port=%s" % port)
 
@@ -140,8 +117,6 @@ def test(port):
 def deploy():
 	"""Publish the app to google app engine."""
 	
-	print Colors.color("> Compiling abstracts", "green")
-	compile_abs()
 	print Colors.color("> Initiating deploy", "green")
 	run("appcfg.py update .")
 
@@ -177,7 +152,7 @@ def run(*statement):
 	subprocess.call(command)
 
 def format(filepath, **kw):
-	"""Add the proper names to a code template."""
+	"""Add the proper variable names to a code template."""
 	with open(filepath, 'r+') as f:
 		old_content = f.read()
 		f.truncate()
