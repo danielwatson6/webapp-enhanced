@@ -4,7 +4,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(name="Webapp Enhanced",
-      version="0.0.3",
+      version="1.0.0",
       author="Daniel Watson",
       author_email="watsondaniel6@gmail.com",
       description="Enhanced framework for Google App Engine",
