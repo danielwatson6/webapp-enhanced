@@ -1,9 +1,5 @@
-{% extends "layouts/base.html" %}
+- extends "layouts/base.html"
 
-{% block content %}
-
-%form{method: "post"}
-	
-	%input{name: "_method", type: "hidden", value: "PUT"} 	{# Redirect to PUT request #}
-
-{% endblock %}
+- block content
+	%form{'method': 'post'}
+		%input{'name': '_method', 'type': 'hidden', 'value': 'PUT'} 	-# Set method to PUT

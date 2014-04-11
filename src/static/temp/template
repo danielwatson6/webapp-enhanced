@@ -1,8 +1,5 @@
-{% extends "layouts/base.html" %}
+- extends "layouts/base.html"
 
 
-{% block content %}
-
-%h1 Hello, World!
-
-{% endblock %}
+- block content
+	%h1 Hello, World!

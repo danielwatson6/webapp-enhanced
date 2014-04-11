@@ -1,7 +1,4 @@
-{% extends "layouts/base.html" %}
+- extends "layouts/base.html"
 
-{% block content %}
-
-%h1 {{ resource }}
-
-{% endblock %}
+- block content
+	%h1= resource

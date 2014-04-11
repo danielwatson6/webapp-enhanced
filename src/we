@@ -97,7 +97,7 @@ def compile_abs():
 	
 	# Compilations
 	for f in haml_files:
-		run("haml abstract/haml/%s views/%s" % (f, f[:-4] + 'html'))
+		run("hamlpy abstract/haml/%s views/%s" % (f, f[:-4] + 'html'))
 	for f in sass_files:
 		run("sass abstract/sass/%s assets/css/%s" % (f, f[:-4] + 'css'))
 	run("coffee -c --output assets/js abstract/coffee/")
@@ -135,7 +135,7 @@ parser.add_argument('-t', '--test', nargs=1, metavar='PORT', type=int,
 parser.add_argument('-d', '--deploy', action='store_true',
 					help="deploy the project to app engine")
 parser.add_argument('-c', '--compile', action='store_true',
-					help="compile abstract files (requires haml, sass, & coffeescript)")
+					help="compile abstract files")
 
 args = parser.parse_args()
 
