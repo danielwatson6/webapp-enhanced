@@ -3,14 +3,12 @@
 import os
 import re
 import glob
-import inspect
 import argparse
-import settings
 import subprocess
 
 
-# Get the path to this script's directory:
-DIR = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'static'))
+# Path for static files
+STATIC_FILES_DIR = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', '..', 'static'))
 
 
 def new(name):
@@ -19,7 +17,7 @@ def new(name):
 		print "%s: already exists." % name
 		return
 	run('mkdir', name)
-	run("cp -r %s/ ./%s" % (DIR, name))
+	run("cp -r %s/ ./%s" % (STATIC_FILES_DIR, name))
 	run("touch ./%s/README.md" % name)
 	run("rm -rf ./%s/temp" % name)
 	init_files = glob.glob('./%s/__init__.*' % name)
@@ -42,7 +40,7 @@ def gen(g_type, name):
 	lname = re.sub('([a-z0-9])([A-Z])', r'\1_\2',
 				   re.sub('(.)([A-Z][a-z]+)',r'\1_\2', name)).lower()
 	
-	temp_dir = DIR + '/temp'
+	temp_dir = STATIC_FILES_DIR + '/temp'
 	
 	# Stop if the g_type is invalid:
 	if not g_type in ["model", "ajax", "view"]:
