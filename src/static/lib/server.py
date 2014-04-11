@@ -154,11 +154,11 @@ class BaseController(webapp2.RequestHandler):
 	def deny_access(self):
 		self.abort(401)
 	
-	def index(self, *a):
+	def index(self):
 		"""When showing the index.html page."""
 		pass
 	
-	def init(self, *a):
+	def init(self):
 		"""Before any and all requests."""
 		pass
 	
@@ -167,19 +167,19 @@ class BaseController(webapp2.RequestHandler):
 	
 	def get(self, *a):
 		"""Handle GET requests."""
-		self.init(*a)
+		self.init()
 	
 	def post(self, *a):
 		"""Handle POST requests."""
-		self.init(*a)
+		self.init()
 	
 	def put(self, *a):
 		"""Handle PUT requests."""
-		self.init(*a)
+		self.init()
 	
 	def delete(self, *a):
 		"""Handle DELETE requests."""
-		self.init(*a)
+		self.init()
 	
 	
 	### Functions:
@@ -210,9 +210,9 @@ class BaseController(webapp2.RequestHandler):
 		self._flags[f] = value
 		return value
 	
-	def get_data(self, *a):
+	def get_data(self, *params):
 		"""Fetch arguments and their values from the request."""
-		return {i: self.request.get(i) for i in list(a)}
+		return {i: self.request.get(i) for i in list(params)}
 	
 	def send_data(self, **params):
 		"""Add variables to the views."""
@@ -260,7 +260,7 @@ class Controller(BaseController):
 		super(Controller, self).get(*a)
 		
 		# Actions from index method:
-		self.index(*a)
+		self.index()
 		
 		# Check if render flag is on:
 		if self._flags["render"]:
@@ -288,15 +288,15 @@ class ModelController(BaseController):
 		mode = self.get_mode()
 		if mode == "index":
 			self.get_resources()
-			self.index(*a)
+			self.index()
 		elif mode == "new":
-			self.new(*a)
+			self.new()
 		elif mode == "show":
-			resource = self.get_resource(list(a)[0])
-			self.show(*a)
+			self.get_resource(list(a)[0])
+			self.show()
 		elif mode == "edit":
 			self.get_resource(list(a)[0])
-			self.edit(*a)
+			self.edit()
 		
 		# Check if render flag is on:
 		if self._flags["render"]:
@@ -396,29 +396,30 @@ class ModelController(BaseController):
 	
 	def get_resource(self, resource_id):
 		"""Get the entity from the given id, stop if it doesn't exist,
-		otherwise add it to the template."""
+		otherwise add it to the template and to self."""
 		
 		resource = ndb.Key(self.model.__name__, int(resource_id)).get()
 		if not resource:
 			self.abort(404)
 		self._params['resource'] = resource
+		self.resource = resource
 		return resource
 	
 	### Methods child classes may override:
 	
-	def new(self, *a):
+	def new(self):
 		"""When displaying new.html."""
+	
+	def show(self):
+		"""When displaying show.html."""
+	
+	def edit(self):
+		"""When displaying edit.html."""
 	
 	def create(self, resource):
 		"""When creating an entity.
 		Called on a POST request.
 		"""
-	
-	def show(self, *a):
-		"""When displaying show.html."""
-	
-	def edit(self, *a):
-		"""When displaying edit.html."""
 	
 	def update(self, resource):
 		"""When modifying an entity.
