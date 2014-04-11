@@ -3,7 +3,7 @@
 import os
 from setuptools import setup, find_packages
 
-setup(name="Webapp Enhanced",
+setup(name="webapp-enhanced",
 	  version="1.0.0",
 	  author="Daniel Watson",
 	  author_email="watsondaniel6@gmail.com",
