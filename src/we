@@ -43,7 +43,7 @@ def gen(g_type, name):
 	temp_dir = STATIC_FILES_DIR + '/temp'
 	
 	# Stop if the g_type is invalid:
-	if not g_type in ["model", "ajax", "view"]:
+	if not g_type in ["model", "ajax", "controller"]:
 		print "error: no setting found for %s" % g_type
 		return
 	
@@ -63,7 +63,7 @@ def gen(g_type, name):
 		run("cp %s/ajax ./controllers/%s.py" % (temp_dir, lname))
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		
-	elif g_type == "view":
+	elif g_type == "controller":
 		run("mkdir ./views/%s" % lname)
 		run("mkdir ./abstract/haml/%s" % lname)
 		run("cp %s/template ./abstract/haml/%s/index.haml" % (temp_dir, lname))

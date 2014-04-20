@@ -1,9 +1,5 @@
 # Webapp Enhanced
-Webapp Enhanced is a library designed
-to make python development with Google
-App Engine easier. Currently, the library
-only has basic features and is still
-under development.
+Webapp Enhanced is a library designed to make python development with Google App Engine easier. Currently, the library only has basic features and is still under development.
 
 ## Installing
 To install, you may use pip or setuptools:
@@ -11,8 +7,7 @@ To install, you may use pip or setuptools:
     pip install webapp-enhanced  # pip
     easy_install webapp-enhanced # setuptools
 
-You may also clone this repository and run
-`python setup.py install`
+You may also clone this repository and run `python setup.py install`
 
 Webapp Enhanced also requires
 [Python 2.7](https://www.python.org/download/releases/2.7),
@@ -22,21 +17,16 @@ and [Jinja2](https://github.com/mitsuhiko/jinja2).
 We strongly recommend using
 and [HamlPy](https://github.com/jessemiller/HamlPy),
 [CoffeeScript](http://coffeescript.org/#installation),
-and [Sass](http://sass-lang.com/install). Support for other abstraction languages
-is not yet supported, but it can be done manually.
+and [Sass](http://sass-lang.com/install). Support for other abstraction languages is not yet supported, but it can be done manually.
 
 ## Getting started
-Once installed, Webapp Enhanced can be
-accessed in your console by using `we`.
-The different commands can be seen by typing `we -h`.
+Once installed, Webapp Enhanced can be accessed in your console by using `we`. The different commands can be seen by typing `we -h`.
 
 ### Creating the app
-To create a new webapp, type `we -n [project name]`.
-A new directory containing all the files will be created.
+To create a new webapp, type `we -n [project name]`. A new directory containing all the files will be created.
 
 ### Testing
-To run the webapp on your machine, just type `we`. By default, it will run on
-http://localhost:3000. To specify a port, use `we -t [port]` instead.
+To run the webapp on your machine, just type `we`. By default, it will run on http://localhost:3000. To specify a port, use `we -t [port]` instead.
 
 ### Using HamlPy, CoffeeScript, and Sass
 Webapp Enhanced has support for these languages. If you are not using HamlPy, we seriously recommend it.
@@ -88,6 +78,34 @@ If you do not know anything about MVC, this may be confusing. A good explanation
 Your controllers and models are each in single python files, located in the `controllers/` and `models/` folders, respectively. Views are located in the `views/` folder, but if you're working with HamlPy, you may ignore that folder– your views will be located in `abstract/haml/`.
 
 ### Deploying
-Your app can be deployed to google app engine by using `we -d`.
-You must have the domain registered on appengine beforehand.
-In `app.yaml`, you must put the domain in `application:` as well.
+Your app can be deployed to google app engine by using `we -d`. You must have the domain registered on appengine beforehand. In `app.yaml`, you must put the registered application name in `application:` as well.
+
+## Working with Webapp Enhanced
+Many of the features that Webapp Enhanced introduces are not in Google App Engine. The most notable are generating files and using models-controllers.
+
+### Generating files
+The `we -g [type] [name]` command will generate python and haml code based on what you want. As of now, Webapp Enhanced has support for `we -g model`, `we -g controller`, and `we -g ajax`, but much more will be added in the future.
+
+Setting the command to `ajax` will generate only an AJAX Controller. Using `controller` will generate a controller along with a template (the view) in `abstract/haml/[name]/index.haml`. Using `model` will generate a model, its controller, and four views (index.haml, new.haml, show.haml, and edit.haml) located in `abstract/haml/[name]`.
+
+### Models
+TO-DO: Add documentation here
+
+#### Properties
+#### Validators and forms
+
+### Controllers
+TO-DO: Add documentation here
+
+#### Regular controllers
+#### Model controllers
+#### AJAX controllers
+
+### Views
+TO-DO: Add documentation here
+
+#### Jinja2
+#### Implementing HamlPY
+
+### Joining everything
+TO-DO: Add documentation here
