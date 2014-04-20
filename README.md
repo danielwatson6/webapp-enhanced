@@ -34,7 +34,7 @@ The different commands can be seen by typing `we -h`.
 To create a new webapp, type `we -n [project name]`.
 A new directory containing all the files will be created.
 
-### Testing and deploying
+### Testing
 To run the webapp on your machine, just type `we`. By default, it will run on
 http://localhost:3000. To specify a port, use `we -t [port]` instead.
 
