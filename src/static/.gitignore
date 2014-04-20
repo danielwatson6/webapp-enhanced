@@ -2,8 +2,9 @@
 .sass_cache
 
 # Webapp Enhanced
-assets/
-views/
+# NOTE: Turn these on if you are using HamlPy, Sass, and Coffee.
+#assets/
+#views/
 
 # OS X
 .DS_Store
