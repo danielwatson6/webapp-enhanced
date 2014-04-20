@@ -1,10 +1,10 @@
 import controllers
 
-from lib import server
+from lib.server import webapp_enhanced
 
 
-# Fetch all controllers
-app = server.Application(controllers.all_classes())
+app = webapp_enhanced()
 
+app.route(controllers.all_classes())
 
-app.initialize(debug = True)
+app.start()
