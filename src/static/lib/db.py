@@ -4,7 +4,7 @@ import logging
 from google.appengine.ext import ndb
 
 
-EMAIL_RE = r'.*'		# TO-DO: Add a real regexp.
+EMAIL_RE = r'.+@.+\..+'
 
 
 class Model(ndb.Model):
@@ -134,6 +134,11 @@ class EqualTo(BaseValidator):
 		if field == self.default_value: return field
 		raise IOError(self.message)
 
+class EscapeHTML(BaseValidator):
+	"""Validator that changes the value to an html-safe string."""
+	def validate(self, value):
+		return cgi.escape(value)
+
 class Length(BaseValidator):
 	"""Validator that checks if the input's length is between a certain range."""
 	
@@ -204,10 +209,10 @@ class StopValidation(Exception):
 
 class validators(object):
 	"""Validators shortcut."""
-	
 	any_of = AnyOf
 	email = Email
 	equal_to = EqualTo
+	escape = EscapeHTML
 	length = Length
 	none_of = NoneOf
 	number_range = NumberRange
@@ -217,17 +222,23 @@ class validators(object):
 
 
 ### Model properties:
-generic = ndb.GenericProperty
+generic = ndb.GenericProperty 		# Takes in any generic value
 string = ndb.StringProperty
 integer = ndb.IntegerProperty
 boolean = ndb.BooleanProperty
 double = ndb.FloatProperty
-text = ndb.TextProperty
+text = ndb.TextProperty			# Accepts newlines and unlimited length
+
+# Specialized properties
 date = ndb.DateProperty
+time = ndb.TimeProperty
+date_time = ndb.DateTimeProperty
 user = ndb.UserProperty
+geo_pt = ndb.GeoPtProperty
 key = ndb.KeyProperty
-pickle = ndb.PickleProperty
+blob_key = ndb.BlobKeyProperty
 json = ndb.JsonProperty
+pickle = ndb.PickleProperty
 
 
 # This is used within the module.

@@ -78,7 +78,7 @@ class Response(webapp2.Response):
 		self.headers["Content-Type"] = t
 
 
-class Application(webapp2.WSGIApplication):
+class webapp_enhanced(webapp2.WSGIApplication):
 	"""Application class.
 	
 	An application instance is created in the main script,
@@ -93,13 +93,44 @@ class Application(webapp2.WSGIApplication):
 	request_class = Request
 	response_class = Response
 	
-	# NOTE: Unlike the default Application class, this will not
-	# initialize the application (see initialize() method). This
-	# only handles the mapping of classes to their paths.
-	def __init__(self, controllers):
-		self._controller_map = []
+	def __init__(self):
+		"""NOTE: to actually start the application, use the start() method.
 		
-		# User-defined routes:
+		By starting the application after creating the class instance,
+		routing and settings don't need to be all clumped in this method.
+		
+		"""
+		self._controller_map = []
+	
+	def start(self, **kw):
+		"""Grab the controller map and start the application."""
+		super(webapp_enhanced, self).__init__(self._controller_map, **kw)
+	
+	def add_route(self, path_re, controller):
+		"""Add a custom path to the given controller.
+		
+		Unlike the route() method, the path regexp must be specified here.
+		
+		"""
+		self._controller_map.append((path_re, controller))
+	
+	def route(self, controllers):
+		"""Determine the path for a controller and route it.
+		
+		If the controllers do not have their path specified
+		(they should be a regexp below the class name, as documentation)
+		this method will give it the class name, formatted to lowercase.
+		
+		Instances of ModelController are given more paths to work
+		accordingly with the class, and, if the default path is not
+		specified, it will be the formatted, pluralized class name.
+		
+		NOTE: Normal controllers, as well as index & show pages for
+		      ModelController instances are allowed to have extensions
+		      for XML and JSON compatibility. This may be turned off
+		      by setting the allow_extensions variable to false.
+		
+		"""
 		for c in controllers:
 			
 			# Check if a path is already specified:
@@ -111,29 +142,37 @@ class Application(webapp2.WSGIApplication):
 				current = '/' + _lowercase(c.__name__)
 				if c._supports_model: current += 's'
 			
-			# Add the mappings:
+			# Check for extensions
+			if c.allow_extensions:
+				e = r'(?:\.(.+))?'
 			
-			self._controller_map.append((current + r'(?:\.(.+))?', c)) # Index page (extension allowed).
+			self.add_route(current + e, c) # Index page
 			
-			# Extra maps for controllers linked to models:
+			# Missing routes for model controllers:
 			if c._supports_model:
-				self._controller_map.append((current + r'/new', c)) # Create page.
-				self._controller_map.append((current + r'/([0-9]+)(?:\.(.+))?', c)) # Show page (extension allowed).
-				self._controller_map.append((current + r'/([0-9]+)/edit', c)) # Edit page.
+				self.add_route(current + r'/new', c) # Create page
+				self.add_route(current + r'/([0-9]+)' + e, c) # Show page
+				self.add_route(current + r'/([0-9]+)/edit', c) # Edit page
 	
 	
-	def set_jinja_options(self, **kw):
-		"""Change any Jinja2 options."""
+	def set_jinja2_options(self, **kw):
+		"""Change any Jinja2 settings.
+		
+		See the Jinja2 documentation for details: http://jinja.pocoo.org/docs/
+		
+		"""
 		global jinja_env
 		jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), **kw)
 	
-	def initialize(self, **kw):
-		"""Actually initialize the Application instance."""
-		super(Application, self).__init__(self._controller_map, **kw)
-	
-	def add_route(self, path_re, controller):
-		"""Add a route manually."""
-		self._controller_map.append((path_re, controller))
+	def set_views_folder(self, *path):
+		"""Change the default location of the views folder.
+		
+		Multiple arguments are used to support os.path.join.
+		
+		"""
+		global template_dir
+		template_dir = os.path.join(os.path.dirname(__file__), *path)
+		self.set_jinja2_options()
 
 
 class BaseController(webapp2.RequestHandler):
@@ -144,24 +183,29 @@ class BaseController(webapp2.RequestHandler):
 	
 	"""
 	
-	# The Application class uses this to determine whether to add
-	# the extra mappings for controllers linked to models.
+	# The webapp_enhanced class uses this to determine whether to add
+	# the extra paths for controllers linked to models.
 	_supports_model = False
 	
+	# This is used to determine whether to add the option of allowing
+	# file extensions in the controller's path.
+	allow_extensions = True
 	
 	### Methods child classes may override:
 	
-	def deny_access(self):
-		self.abort(401)
-	
 	def index(self):
 		"""When showing the index.html page."""
-		pass
 	
 	def init(self):
 		"""Before any and all requests."""
-		pass
 	
+	def authorized(self):
+		"""Determine if the user has access to the controller.
+		This method is similar to deny_access(), but it is meant to
+		deny access to the entire controller and to be triggered by
+		this module.
+		"""
+		return True
 	
 	### RESTful methods:
 	
@@ -185,7 +229,7 @@ class BaseController(webapp2.RequestHandler):
 	### Functions:
 	
 	def initialize(self, *a, **kw):
-		"""Default actions."""
+		"""Default __init__ actions that are handled by this class."""
 		super(BaseController, self).initialize(*a, **kw)
 		
 		# Set the variable-like name for the class:
@@ -198,6 +242,13 @@ class BaseController(webapp2.RequestHandler):
 			"render": True,
 			"errors": None,
 		}
+	
+	def deny_access(self):
+		"""Destroy the response and send an unauthorized error.
+		If you wish to block the entire controller, override the
+		authorized() method instead.
+		"""
+		self.abort(401)
 	
 	def get_flag(self, f):
 		"""Get the specified flag's value."""
@@ -215,8 +266,13 @@ class BaseController(webapp2.RequestHandler):
 		return {i: self.request.get(i) for i in list(params)}
 	
 	def send_data(self, **params):
-		"""Add variables to the views."""
+		"""Add data that can be used by the views."""
 		self._params = dict(self._params.items() + dict(params).items())
+	
+	def send_data_dict(self, d):
+		"""Same as send_data(), but takes in a dictionary
+		instead of multiple keyword args."""
+		self.send_data(**d)
 	
 	def render_json(self, d):
 		"""Render and display a data structure as JSON."""
@@ -250,7 +306,7 @@ class BaseController(webapp2.RequestHandler):
 class Controller(BaseController):
 	"""Controller for simple pages.
 	
-	Default controllers only include a home page.
+	Default controllers have a single path.
 	
 	"""
 	
@@ -258,6 +314,9 @@ class Controller(BaseController):
 		"""Handle GET requests.
 		"""
 		super(Controller, self).get(*a)
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
 		
 		# Actions from index method:
 		self.index()
@@ -284,6 +343,9 @@ class ModelController(BaseController):
 		"""Handle GET requests."""
 		super(ModelController, self).get(*a)
 		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
+		
 		# Select mode and use corresponding methods:
 		mode = self.get_mode()
 		if mode == "index":
@@ -304,6 +366,9 @@ class ModelController(BaseController):
 	
 	def post(self, *a):
 		BaseController.post(self, *a)
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
 		
 		if self.intercept(*a): return 	# Catches PUT and DELETE methods
 		
@@ -327,6 +392,9 @@ class ModelController(BaseController):
 	
 	def put(self, *a):
 		BaseController.put(self, *a)
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
 		
 		form = self.model.form
 		assert form is not None
@@ -353,6 +421,10 @@ class ModelController(BaseController):
 		"""Handle DELETE requests.
 		Will destroy the current resource.
 		"""
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
+		
 		self._flags["render"] = False
 		resource_id = self.request.get("_resource_id")
 		resource = self.get_resource(resource_id)
@@ -441,7 +513,7 @@ class ModelController(BaseController):
 class AJAXController(BaseController):
 	"""Controller for AJAX requests
 	
-	AJAX Controllers don't include any templates.
+	AJAX Controllers don't work with views.
 	
 	"""
 	
@@ -473,18 +545,34 @@ class AJAXController(BaseController):
 	
 	def get(self, *a):
 		super(AJAXController, self).get(*a)
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
+		
 		self.GET(*a)
 	
 	def post(self, *a):
 		super(AJAXController, self).post(*a)
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
+		
 		self.POST(*a)
 	
 	def put(self, *a):
 		super(AJAXController, self).put(*a)
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
+		
 		self.PUT(*a)
 	
 	def delete(self, *a):
 		super(AJAXController, self).delete(*a)
+		
+		# Check for authorization:
+		if not self.authorized(): self.abort(401)
+		
 		self.DELETE(*a)
 
 
