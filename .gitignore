@@ -10,8 +10,6 @@ Icon?
 *.so
 
 # Packages
-MANIFEST
-MANIFEST.*
 *.egg
 *.egg-info
 dist
