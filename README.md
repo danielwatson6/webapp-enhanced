@@ -84,9 +84,9 @@ Your app can be deployed to google app engine by using `we -d`. You must have th
 Many of the features that Webapp Enhanced introduces are not in Google App Engine. The most notable are generating files and using models-controllers.
 
 ### Generating files
-The `we -g [type] [name]` command will generate python and haml code based on what you want. As of now, Webapp Enhanced has support for `we -g model`, `we -g controller`, and `we -g ajax`, but much more will be added in the future.
+The `we -g [type] [name]` command will generate python and haml code based on what you want. As of now, Webapp Enhanced has support for `we -g model`, `we -g controller`, `we -g model_controller`, `we -g model_views`, and `we -g ajax_controller`. More will be added in the future.
 
-Setting the command to `ajax` will generate only an AJAX Controller. Using `controller` will generate a controller along with a template (the view) in `abstract/haml/[name]/index.haml`. Using `model` will generate a model, its controller, and four views (index.haml, new.haml, show.haml, and edit.haml) located in `abstract/haml/[name]`.
+Using `model` creates a model's file with the given name. The same goes for `controller`, `ajax_controller` and `model_controller`, except that `controller` automatically adds a view. Since models don't always work with views, they can be added separately using `model_views`, which will add various templates.
 
 ### Models
 TO-DO: Add documentation here
