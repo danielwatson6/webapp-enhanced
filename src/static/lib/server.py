@@ -524,19 +524,19 @@ class AJAXController(BaseController):
 	
 	### Methods child classes may override:
 	
-	def GET(self, *a):
+	def GET(self):
 		"""Actions for GET requests."""
 		pass
 	
-	def POST(self, *a):
+	def POST(self):
 		"""Actions for POST requests."""
 		pass
 	
-	def PUT(self, *a):
+	def PUT(self):
 		"""Actions for PUT requests."""
 		pass
 	
-	def DELETE(self, *a):
+	def DELETE(self):
 		"""Actions for DELETE requests."""
 		pass
 	
@@ -549,7 +549,7 @@ class AJAXController(BaseController):
 		# Check for authorization:
 		if not self.authorized(): self.abort(401)
 		
-		self.GET(*a)
+		self.GET()
 	
 	def post(self, *a):
 		super(AJAXController, self).post(*a)
@@ -557,7 +557,7 @@ class AJAXController(BaseController):
 		# Check for authorization:
 		if not self.authorized(): self.abort(401)
 		
-		self.POST(*a)
+		self.POST()
 	
 	def put(self, *a):
 		super(AJAXController, self).put(*a)
@@ -565,7 +565,7 @@ class AJAXController(BaseController):
 		# Check for authorization:
 		if not self.authorized(): self.abort(401)
 		
-		self.PUT(*a)
+		self.PUT()
 	
 	def delete(self, *a):
 		super(AJAXController, self).delete(*a)
@@ -573,7 +573,7 @@ class AJAXController(BaseController):
 		# Check for authorization:
 		if not self.authorized(): self.abort(401)
 		
-		self.DELETE(*a)
+		self.DELETE()
 
 
 # This is used within the module.
