@@ -1,10 +1,9 @@
 *.py[cod]
-.sass_cache
 
-# Webapp Enhanced
-# NOTE: Turn these on if you are using HamlPy, Sass, and Coffee.
-#assets/
-#views/
+# Webapp Enhanced: turn these on if you are using hamlpy, sass, and coffee.
+# assets/
+# views/
+# .sass_cache/
 
 # OS X
 .DS_Store
