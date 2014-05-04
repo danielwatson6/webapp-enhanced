@@ -34,7 +34,16 @@ def new(name):
 
 
 def gen(g_type, name):
-	"""Generate the desired files."""
+	"""Generate the desired files.
+	
+	Options:
+	- model (standard model)
+	- controller (standard controller with view)
+	- model_controller (controller automated for models)
+	- ajax_controller (low-level RESTful controller without view)
+	- model_views (various views for models)
+	
+	"""
 	
 	# Lowercase-formatted name
 	lname = re.sub('([a-z0-9])([A-Z])', r'\1_\2',
@@ -48,20 +57,8 @@ def gen(g_type, name):
 		return
 	
 	if g_type == "model":
-		run("mkdir ./views/%s" % lname)
-		run("mkdir ./abstract/haml/%s" % lname)
-		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
-		run("cp %s/template ./abstract/haml/%s/new.haml" % (temp_dir, lname))
-		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
-		run("cp %s/template-model-edit ./abstract/haml/%s/edit.haml" % (temp_dir, lname))
-		run("cp %s/controller-model ./controllers/%s.py" % (temp_dir, lname))
 		run("cp %s/model ./models/%s.py" % (temp_dir, lname))
-		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		format("./models/%s.py" % lname, name = name, lname = lname)
-	
-	elif g_type == "ajax":
-		run("cp %s/ajax ./controllers/%s.py" % (temp_dir, lname))
-		format("./controllers/%s.py" % lname, name = name, lname = lname)
 		
 	elif g_type == "controller":
 		run("mkdir ./views/%s" % lname)
@@ -69,6 +66,22 @@ def gen(g_type, name):
 		run("cp %s/template ./abstract/haml/%s/index.haml" % (temp_dir, lname))
 		run("cp %s/controller-view ./controllers/%s.py" % (temp_dir, lname))
 		format("./controllers/%s.py" % lname, name = name, lname = lname)
+	
+	elif g_type == "model_controller":
+		run("cp %s/controller-model ./controllers/%s.py" % (temp_dir, lname))
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+	
+	elif g_type == "ajax_controller":
+		run("cp %s/ajax ./controllers/%s.py" % (temp_dir, lname))
+		format("./controllers/%s.py" % lname, name = name, lname = lname)
+	
+	if g_type == "model_views":
+		run("mkdir ./views/%s" % lname)
+		run("mkdir ./abstract/haml/%s" % lname)
+		run("cp %s/template-model-index ./abstract/haml/%s/index.haml" % (temp_dir, lname))
+		run("cp %s/template ./abstract/haml/%s/new.haml" % (temp_dir, lname))
+		run("cp %s/template-model-show ./abstract/haml/%s/show.haml" % (temp_dir, lname))
+		run("cp %s/template-model-edit ./abstract/haml/%s/edit.haml" % (temp_dir, lname))
 	
 	print "%s: added." % lname
 
